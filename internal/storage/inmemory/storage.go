@@ -1,6 +1,7 @@
 package inmemory
 
 import (
+	"errors"
 	"github.com/Lux00000/PostsAndComments/internal/models"
 	"sync"
 )
@@ -42,9 +43,14 @@ func (s *Storage) GetAllPosts() []*models.Post {
 	return posts
 }
 
-func (s *Storage) AddComment(comment *models.Comment) {
+func (s *Storage) AddComment(comment *models.Comment) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	targetPost, exists := s.posts[comment.PostID]
+	if targetPost.AllowComments == false {
+		return errors.New("post disabled comments")
+	}
 	s.comments[comment.ID] = comment
 
 	if comment.ParentID != nil {
@@ -52,10 +58,14 @@ func (s *Storage) AddComment(comment *models.Comment) {
 		if exists {
 			parentComment.Children = append(parentComment.Children, comment)
 		}
+
+	} else if exists {
+		targetPost.Comments = append(targetPost.Comments, comment)
+
+	} else {
+		return errors.New("wrong comment data")
 	}
 
-	post, exists := s.posts[comment.PostID]
-	if exists {
-		post.Comments = append(post.Comments, comment)
-	}
+	return nil
+
 }
