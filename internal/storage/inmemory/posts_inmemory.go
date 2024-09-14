@@ -6,28 +6,26 @@ import (
 	"sync"
 )
 
-type Storage struct {
-	counter  int
-	posts    map[int]*models.Post
-	comments map[int]*models.Comment
-	mu       sync.RWMutex
+type PostsInMemory struct {
+	postCounter int
+	posts       []models.Post
+	mu          sync.RWMutex
 }
 
-func NewStorage() *Storage {
-	return &Storage{
-		counter:  0,
-		posts:    make(map[int]*models.Post, 0),
-		comments: make(map[int]*models.Comment),
+func NewPostsInMemory(count int) *PostsInMemory {
+	return &PostsInMemory{
+		postCounter: 0,
+		posts:       make([]models.Post, 0),
 	}
 }
 
-func (s *Storage) CreatePost(post *models.Post) (models.Post, error) {
+func (s *PostsInMemory) CreatePost(post *models.Post) (models.Post, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.counter++
+	s.postCounter++
 
-	post.ID = s.counter
+	post.ID = s.postCounter
 
 	s.posts = append(s.posts, *post)
 
