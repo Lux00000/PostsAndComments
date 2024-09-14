@@ -1,8 +1,10 @@
 package interfaces
 
-import "github.com/Lux00000/PostsAndComments/graph/model"
+import (
+	"github.com/Lux00000/PostsAndComments/internal/models"
+)
 
 type CommentService interface {
-	CreateComment(comment *model.Comment) (*model.Comment, error)
-	CommentsSubscription(postID string) (<-chan *model.Comment, error)
+	CreateComment(comment *models.Comment) (*models.Comment, error)
+	CommentsSubscription(postID string) (<-chan *models.Comment, error)
 }

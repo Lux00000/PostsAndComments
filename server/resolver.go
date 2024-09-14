@@ -1,4 +1,4 @@
-package graph
+package server
 
 import (
 	"database/sql"
@@ -20,8 +20,8 @@ func NewResolver(db *sql.DB) *Resolver {
 		postService = postgres_resolver.NewDBPostService(db)
 		commentService = postgres_resolver.NewDBCommentService(db)
 	} else {
-		postService = graph.NewInMemoryPostService()
-		commentService = graph.NewInMemoryCommentService()
+		postService = graph.NewInMemoryPost()
+		commentService = graph.NewInMemoryComment()
 	}
 
 	return &Resolver{

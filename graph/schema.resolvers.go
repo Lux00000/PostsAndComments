@@ -6,12 +6,13 @@ package graph
 
 import (
 	"context"
-	"github.com/Lux00000/PostsAndComments/graph/model"
+	"github.com/Lux00000/PostsAndComments/internal/models"
+	"github.com/Lux00000/PostsAndComments/server"
 )
 
 // CreatePost is the resolver for the CreatePost field.
-func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, authorID string, allowComments bool) (*model.Post, error) {
-	post := &model.Post{
+func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, authorID string, allowComments bool) (*models.Post, error) {
+	post := &models.Post{
 		Title:         title,
 		Content:       content,
 		AuthorID:      authorID,
@@ -21,8 +22,8 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 }
 
 // CreateComment is the resolver for the CreateComment field.
-func (r *mutationResolver) CreateComment(ctx context.Context, postID string, parentCommentID *string, authorID string, text string) (*model.Comment, error) {
-	comment := &model.Comment{
+func (r *mutationResolver) CreateComment(ctx context.Context, postID string, parentCommentID *string, authorID string, text string) (*models.Comment, error) {
+	comment := &models.Comment{
 		PostID:          postID,
 		ParentCommentID: parentCommentID,
 		AuthorID:        authorID,
@@ -32,7 +33,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 }
 
 // GetAllPosts is the resolver for the GetAllPosts field.
-func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *int) ([]*model.Post, error) {
+func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *int) ([]*models.Post, error) {
 	if page == nil {
 		page = new(int)
 		*page = 1
@@ -45,24 +46,24 @@ func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *in
 }
 
 // GetPostByID is the resolver for the GetPostById field.
-func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*model.Post, error) {
+func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*models.Post, error) {
 	return r.PostService.GetPostByID(id)
 }
 
 // CommentsSubscription is the resolver for the CommentsSubscription field.
-func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID string) (<-chan *model.Comment, error) {
+func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID string) (<-chan *models.Comment, error) {
 	return r.CommentService.CommentsSubscription(postID)
 }
 
 // Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+func (r *server.Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+func (r *server.Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 // Subscription returns SubscriptionResolver implementation.
-func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
+func (r *server.Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type mutationResolver struct{ *server.Resolver }
+type queryResolver struct{ *server.Resolver }
+type subscriptionResolver struct{ *server.Resolver }
