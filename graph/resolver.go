@@ -4,11 +4,8 @@ import (
 	"database/sql"
 	graph "github.com/Lux00000/PostsAndComments/graph/inmemory_resolver"
 	"github.com/Lux00000/PostsAndComments/graph/interfaces"
+	"github.com/Lux00000/PostsAndComments/graph/postgres_resolver"
 )
-
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
 	PostService    interfaces.PostService
@@ -20,8 +17,8 @@ func NewResolver(db *sql.DB) *Resolver {
 	var commentService interfaces.CommentService
 
 	if db != nil {
-		postService = NewDBPostService(db)
-		commentService = NewDBCommentService(db)
+		postService = postgres_resolver.NewDBPostService(db)
+		commentService = postgres_resolver.NewDBCommentService(db)
 	} else {
 		postService = graph.NewInMemoryPostService()
 		commentService = graph.NewInMemoryCommentService()

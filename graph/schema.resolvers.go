@@ -6,34 +6,52 @@ package graph
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/Lux00000/PostsAndComments/graph/model"
 )
 
 // CreatePost is the resolver for the CreatePost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, authorID string, allowComments bool) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented: CreatePost - CreatePost"))
+	post := &model.Post{
+		Title:         title,
+		Content:       content,
+		AuthorID:      authorID,
+		AllowComments: allowComments,
+	}
+	return r.PostService.CreatePost(post)
 }
 
 // CreateComment is the resolver for the CreateComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID string, parentCommentID *string, authorID string, text string) (*model.Comment, error) {
-	panic(fmt.Errorf("not implemented: CreateComment - CreateComment"))
+	comment := &model.Comment{
+		PostID:          postID,
+		ParentCommentID: parentCommentID,
+		AuthorID:        authorID,
+		Text:            text,
+	}
+	return r.CommentService.CreateComment(comment)
 }
 
 // GetAllPosts is the resolver for the GetAllPosts field.
 func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *int) ([]*model.Post, error) {
-	panic(fmt.Errorf("not implemented: GetAllPosts - GetAllPosts"))
+	if page == nil {
+		page = new(int)
+		*page = 1
+	}
+	if pageSize == nil {
+		pageSize = new(int)
+		*pageSize = 10
+	}
+	return r.PostService.GetAllPosts(*page, *pageSize)
 }
 
 // GetPostByID is the resolver for the GetPostById field.
 func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented: GetPostByID - GetPostById"))
+	return r.PostService.GetPostByID(id)
 }
 
 // CommentsSubscription is the resolver for the CommentsSubscription field.
 func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID string) (<-chan *model.Comment, error) {
-	panic(fmt.Errorf("not implemented: CommentsSubscription - CommentsSubscription"))
+	return r.CommentService.CommentsSubscription(postID)
 }
 
 // Mutation returns MutationResolver implementation.

@@ -29,33 +29,36 @@ func (s *Storage) CreatePost(post *models.Post) (models.Post, error) {
 
 	post.ID = s.counter
 
-	s.posts = append(s.posts, *post)
+	s.posts[post.ID] = post
 
 	return *post, nil
 }
 
-func (s *PostsInMemory) GetAllPosts(limit, offset int) ([]models.Post, error) {
+func (s *Storage) GetAllPosts(limit, offset int) ([]models.Post, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if offset > s.postCounter {
+	if offset > s.counter {
 		return nil, errors.New("offset > postCounter")
 	}
 
-	if offset+limit > s.postCounter || limit == -1 {
-		return s.posts[offset:], nil
+	var posts []models.Post
+	for i := offset; i <= s.counter && (limit == -1 || i < offset+limit); i++ {
+		if post, ok := s.posts[i]; ok {
+			posts = append(posts, *post)
+		}
 	}
 
-	return s.posts[offset : offset+limit], nil
+	return posts, nil
 }
 
-func (s *PostsInMemory) GetPostById(id int) (models.Post, error) {
+func (s *Storage) GetPostById(id int) (models.Post, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if id > s.postCounter || id <= 0 {
-		return models.Post{}, errors.New("post not found")
+	if post, ok := s.posts[id]; ok {
+		return *post, nil
 	}
 
-	return s.posts[id-1], nil
+	return models.Post{}, errors.New("post not found")
 }
