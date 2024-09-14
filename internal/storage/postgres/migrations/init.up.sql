@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS posts (
+CREATE TABLE IF NOT EXISTS Posts (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -6,12 +6,12 @@ CREATE TABLE IF NOT EXISTS posts (
     allow_comments BOOLEAN NOT NULL DEFAULT TRUE
     );
 
-CREATE TABLE IF NOT EXISTS comments (
+CREATE TABLE IF NOT EXISTS Comments (
     id SERIAL PRIMARY KEY,
-    post_id INT NOT NULL
-    FOREIGN KEY (post) REFERENCES posts(id),
-    parent_comment_id INT
-    FOREIGN KEY (parent_comment_id) REFERENCES comments(id),
+    post_id INT NOT NULL,
+    parent_comment_id INT,
     author_id VARCHAR(255) NOT NULL,
-    text TEXT(2000) NOT NULL
+    text TEXT NOT NULL,
+    FOREIGN KEY (post_id) REFERENCES Posts(id),
+    FOREIGN KEY (parent_comment_id) REFERENCES Comments(id)
     );
