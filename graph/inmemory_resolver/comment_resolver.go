@@ -26,6 +26,6 @@ func (s *inMemoryCommentService) CreateComment(comment *model.Comment) (*model.C
 }
 
 func (s *inMemoryCommentService) CommentsSubscription(postID string) (<-chan *model.Comment, error) {
-	// Реализация подписки для хранилища в памяти
+
 	return make(chan *model.Comment), nil
 }

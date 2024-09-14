@@ -2,7 +2,7 @@ CREATE DATABASE postsandcomments;
 
 \c postsandcomments;
 
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
                        id SERIAL PRIMARY KEY,
                        title VARCHAR(255) NOT NULL,
                        content TEXT NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE posts (
                        allow_comments BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
                           id SERIAL PRIMARY KEY,
                           post_id INT NOT NULL REFERENCES posts(id),
                           parent_comment_id INT REFERENCES comments(id),
