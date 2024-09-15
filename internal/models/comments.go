@@ -3,7 +3,7 @@ package models
 type Comment struct {
 	ID              int
 	PostID          int
-	ParentCommentID *int
+	ParentCommentID string
 	AuthorId        int
 	Text            string
 }
