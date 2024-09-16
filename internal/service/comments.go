@@ -2,20 +2,18 @@ package service
 
 import (
 	"errors"
-	"github.com/Lux00000/PostsAndComments/internal/models"
-	"github.com/Lux00000/PostsAndComments/internal/storage"
+	"fmt"
+	"github.com/Lux00000/post-and-comments/internal/models"
+	"github.com/Lux00000/post-and-comments/internal/storage"
 )
 
 type CommentsService struct {
-	com  storage.Comments
-	post PostGet
-}
-type PostGet interface {
-	GetPostById(id int) (models.Post, error)
+	comments storage.Comments
+	post     storage.Posts
 }
 
-func NewCommentsService(com storage.Comments, get PostGet) *CommentsService {
-	return &CommentsService{com: com, post: get}
+func NewCommentsService(com storage.Comments, posts storage.Posts) *CommentsService {
+	return &CommentsService{comments: com, post: posts}
 }
 
 func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment, error) {
@@ -28,12 +26,13 @@ func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment,
 	}
 
 	if comment.PostID <= 0 {
-		return models.Comment{}, errors.New("PostId is zero")
+		return models.Comment{}, errors.New("PostId is less or equal than zero")
 	}
 
 	post, err := c.post.GetPostById(comment.PostID)
 	if err != nil {
-		return models.Comment{}, errors.New("CommentService error GetPostById")
+		return models.Comment{}, fmt.Errorf("CommentService error GetPostById: %w", err)
+		// TODO : Везде пробрасывать ошибку наверх, как в примере выше.
 	}
 
 	if !post.AllowComments {
@@ -41,7 +40,7 @@ func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment,
 
 	}
 
-	newComment, err := c.com.CreateComment(comment)
+	newComment, err := c.comments.CreateComment(comment)
 	if err != nil {
 		return models.Comment{}, errors.New("CommentService error CreateComment")
 	}
@@ -51,22 +50,7 @@ func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment,
 
 func (c CommentsService) GetCommentsByPost(postId int, page *int, pageSize *int) ([]*models.Comment, error) {
 
-	if postId <= 0 {
-		return nil, errors.New("PostId is zero")
-	}
-
-	if *page < 0 {
-		return nil, errors.New("Page is zero")
-	}
-
-	if *pageSize < 0 {
-		return nil, errors.New("PageSize is zero")
-	}
-
-	offset := (*page - 1) * *pageSize
-	limit := *pageSize
-
-	comments, err := c.com.GetCommentsByPost(postId, limit, offset)
+	comments, err := c.comments.GetCommentsByPost(postId, page, pageSize)
 	if err != nil {
 		return nil, errors.New("CommentService error GetCommentsByPost")
 	}
@@ -75,15 +59,13 @@ func (c CommentsService) GetCommentsByPost(postId int, page *int, pageSize *int)
 }
 
 func (c CommentsService) GetChildrenOfComment(commentId int) ([]*models.Comment, error) {
-
 	if commentId <= 0 {
 		return nil, errors.New("CommentId is zero")
 	}
 
-	comments, err := c.com.GetChildrenOfComment(commentId)
+	comments, err := c.comments.GetChildrenOfComment(commentId)
 	if err != nil {
 		return nil, errors.New("CommentService error GetChildrenOfComment")
 	}
 	return comments, nil
-
 }

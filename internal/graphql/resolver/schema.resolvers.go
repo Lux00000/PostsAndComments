@@ -1,4 +1,4 @@
-package server
+package resolver
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -6,10 +6,12 @@ package server
 
 import (
 	"context"
-	"github.com/Lux00000/PostsAndComments/graph"
-	"github.com/Lux00000/PostsAndComments/graph/model"
-	"github.com/Lux00000/PostsAndComments/internal/models"
+	"log"
 	"strconv"
+
+	graphql1 "github.com/Lux00000/post-and-comments/internal/graphql/gen"
+	"github.com/Lux00000/post-and-comments/internal/graphql/gen/model"
+	"github.com/Lux00000/post-and-comments/internal/models"
 )
 
 // CreatePost is the resolver for the CreatePost field.
@@ -50,18 +52,22 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 	}
 	newComment, err := r.CommentsService.CreateComment(models.Comment{
 		PostID:          intPostID,
-		ParentCommentID: *parentCommentID,
+		ParentCommentID: parentCommentID,
 		AuthorId:        intAuthorID,
 		Text:            text,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	mappedComment := model.Comment{
 		AuthorID:        strconv.Itoa(newComment.AuthorId),
 		ID:              strconv.Itoa(newComment.ID),
 		Text:            newComment.Text,
 		PostID:          strconv.Itoa(newComment.PostID),
-		ParentCommentID: &newComment.ParentCommentID,
+		ParentCommentID: newComment.ParentCommentID,
 	}
+	//r.CommentsObservers.NotifyObservers(intPostID, newComment)
 	return &mappedComment, nil
 }
 
@@ -83,23 +89,6 @@ func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *in
 	}
 	return res, nil
 }
-func (r *queryResolver) Comments(ctx context.Context, id int, page *int, pageSize *int) ([]*model.Comment, error) {
-	comments, err := r.CommentsService.GetCommentsByPost(id, page, pageSize)
-	if err != nil {
-		return nil, err
-	}
-	res := make([]*model.Comment, 0, len(comments))
-	for _, comment := range comments {
-		res = append(res, &model.Comment{
-			AuthorID:        strconv.Itoa(comment.AuthorId),
-			ID:              strconv.Itoa(comment.ID),
-			Text:            comment.Text,
-			PostID:          strconv.Itoa(comment.PostID),
-			ParentCommentID: &comment.ParentCommentID,
-		})
-	}
-	return res, nil
-}
 
 // GetPostByID is the resolver for the GetPostById field.
 func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*model.Post, error) {
@@ -107,34 +96,32 @@ func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*model.Post, e
 	if err != nil {
 		return nil, err
 	}
+	page := 1
+	pageSize := 10
+	comments, err := r.CommentsService.GetCommentsByPost(id, &page, &pageSize)
+	if err != nil {
+		return nil, err
+	}
+	mappedComments := make([]*model.Comment, 0, len(comments))
+	for _, comment := range comments {
+		mappedComments = append(mappedComments, &model.Comment{
+			AuthorID:        strconv.Itoa(comment.AuthorId),
+			ID:              strconv.Itoa(comment.ID),
+			Text:            comment.Text,
+			PostID:          strconv.Itoa(comment.PostID),
+			ParentCommentID: comment.ParentCommentID,
+		})
+	}
+
 	mappedPost := model.Post{
 		ID:            strconv.Itoa(post.ID),
 		Title:         post.Title,
 		Content:       post.Content,
 		AuthorID:      strconv.Itoa(post.AuthorId),
 		AllowComments: post.AllowComments,
+		Comments:      mappedComments,
 	}
 	return &mappedPost, nil
-}
-
-// GetChildrenComment is the resolver for the GetChildrenComment field.
-func (r *queryResolver) GetChildrenComment(ctx context.Context, commentID string) ([]*model.Comment, error) {
-	strCommentId, err := strconv.Atoi(commentID)
-	if err != nil {
-		return nil, err
-	}
-	comments, err := r.CommentsService.GetChildrenOfComment(strCommentId)
-	res := make([]*model.Comment, 0, len(comments))
-	for _, comment := range comments {
-		res = append(res, &model.Comment{
-			AuthorID:        strconv.Itoa(comment.AuthorId),
-			ID:              strconv.Itoa(comment.ID),
-			Text:            comment.Text,
-			PostID:          strconv.Itoa(comment.PostID),
-			ParentCommentID: &comment.ParentCommentID,
-		})
-	}
-	return res, nil
 }
 
 // CommentsSubscription is the resolver for the CommentsSubscription field.
@@ -157,17 +144,19 @@ func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID 
 		for {
 			select {
 			case <-ctx.Done():
-				r.CommentsObservers.DeleteObserver(intPostID, id)
+				err := r.CommentsObservers.DeleteObserver(intPostID, id)
+				if err != nil {
+					log.Println("Error deleting observer:", err)
+				}
 				return
 			case comment, ok := <-ch:
 				if !ok {
 					return
 				}
-				// Преобразуем models.Comment в model.Comment
 				receiveOnlyCh <- &model.Comment{
 					ID:              strconv.Itoa(comment.ID),
 					PostID:          strconv.Itoa(comment.PostID),
-					ParentCommentID: &comment.ParentCommentID,
+					ParentCommentID: comment.ParentCommentID,
 					AuthorID:        strconv.Itoa(comment.AuthorId),
 					Text:            comment.Text,
 				}
@@ -178,15 +167,15 @@ func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID 
 	return receiveOnlyCh, nil
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *graph.Resolver) Mutation() graph.MutationResolver { return &mutationResolver{r} }
+// Mutation returns graphql1.MutationResolver implementation.
+func (r *Resolver) Mutation() graphql1.MutationResolver { return &mutationResolver{r} }
 
-// Query returns QueryResolver implementation.
-func (r *graph.Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
+// Query returns graphql1.QueryResolver implementation.
+func (r *Resolver) Query() graphql1.QueryResolver { return &queryResolver{r} }
 
-// Subscription returns SubscriptionResolver implementation.
-func (r *graph.Resolver) Subscription() graph.SubscriptionResolver { return &subscriptionResolver{r} }
+// Subscription returns graphql1.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() graphql1.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type mutationResolver struct{ *graph.Resolver }
-type queryResolver struct{ *graph.Resolver }
-type subscriptionResolver struct{ *graph.Resolver }
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"github.com/Lux00000/PostsAndComments/internal/models"
-	"github.com/Lux00000/PostsAndComments/internal/storage"
+	"github.com/Lux00000/post-and-comments/internal/models"
+	"github.com/Lux00000/post-and-comments/internal/storage"
 )
 
 type PostsService struct {
@@ -40,7 +40,7 @@ func (p PostsService) GetPostById(postId int) (models.Post, error) {
 		return models.Post{}, err
 	}
 
-	return post, nil
+	return *post, nil
 }
 
 func (p PostsService) GetAllPosts(page, pageSize *int) ([]models.Post, error) {

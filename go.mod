@@ -1,4 +1,4 @@
-module github.com/Lux00000/PostsAndComments
+module github.com/Lux00000/post-and-comments
 
 go 1.23.0
 

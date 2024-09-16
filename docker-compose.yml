@@ -1,8 +1,8 @@
-version: '3.8'
+version: '3.9'
 
 services:
   db:
-    image: postgres:13
+    image: postgres:latest
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -18,6 +18,7 @@ services:
       - "8080:8080"
     environment:
       PORT: 8080
+      STORAGE_TYPE:
       DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
     depends_on:
       - db
@@ -28,7 +29,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./db/migrations:/migrations
+      - ./internal/storage/postgres/migrations:/migrations
     environment:
       DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
     command: ["-path=/migrations", "-database", "$$DATABASE_URL", "up"]

@@ -11,13 +11,6 @@ type Comment struct {
 	Children        []*Comment `json:"children,omitempty"`
 }
 
-type CommentInput struct {
-	PostID          string  `json:"postID"`
-	ParentCommentID *string `json:"parentCommentID,omitempty"`
-	AuthorID        string  `json:"authorID"`
-	Text            string  `json:"text"`
-}
-
 type Mutation struct {
 }
 
@@ -28,13 +21,6 @@ type Post struct {
 	AuthorID      string     `json:"authorID"`
 	AllowComments bool       `json:"allowComments"`
 	Comments      []*Comment `json:"comments,omitempty"`
-}
-
-type PostInput struct {
-	Title         string `json:"title"`
-	Content       string `json:"content"`
-	AuthorID      string `json:"authorID"`
-	AllowComments bool   `json:"allowComments"`
 }
 
 type Query struct {

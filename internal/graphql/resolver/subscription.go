@@ -1,16 +1,11 @@
-package server
+package resolver
 
 import (
 	"errors"
-	"github.com/Lux00000/PostsAndComments/internal/models"
+	"github.com/Lux00000/post-and-comments/internal/models"
+	"log"
 	"sync"
 )
-
-type Observers interface {
-	CreateObserver(postId int) (int, chan *models.Comment, error)
-	DeleteObserver(postId, chanId int) error
-	NotifyObservers(postId int, comment models.Comment) error
-}
 
 type CommentsObservers struct {
 	chans   map[int][]CommentObserver
@@ -49,14 +44,20 @@ func (c *CommentsObservers) DeleteObserver(postId, chanId int) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	obs := c.chans[postId]
+	obs, ok := c.chans[postId]
+	if !ok {
+		return errors.New("observer not found")
+	}
+
 	for i, observer := range obs {
 		if observer.id == chanId {
+			close(observer.ch)
 			c.chans[postId] = append(obs[:i], obs[i+1:]...)
+			return nil
 		}
 	}
 
-	return nil
+	return errors.New("observer not found")
 }
 
 func (c *CommentsObservers) NotifyObservers(postId int, comment models.Comment) error {
@@ -64,12 +65,16 @@ func (c *CommentsObservers) NotifyObservers(postId int, comment models.Comment) 
 	defer c.mu.Unlock()
 
 	obs, ok := c.chans[postId]
-	if ok {
-		for _, observer := range obs {
-			observer.ch <- &comment
+	if !ok {
+		return errors.New("observers not found")
+	}
+
+	for _, observer := range obs {
+		select {
+		case observer.ch <- &comment:
+		default:
+			log.Println("NotifyObservers: channel is full, skipping")
 		}
-	} else {
-		return errors.New("Notify error")
 	}
 
 	return nil

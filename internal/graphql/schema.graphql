@@ -19,7 +19,6 @@ type Comment {
 type Query {
   GetAllPosts(page: Int, pageSize: Int): [Post!]!
   GetPostById(id: Int!): Post!
-  GetChildrenComment(commentID: ID!): [Comment!]!
 }
 
 type Mutation {
@@ -30,17 +29,4 @@ type Mutation {
 
 type Subscription{
   CommentsSubscription(postId:ID!):Comment!
-}
-input PostInput {
-  title: String!
-  content: String!
-  authorID: String!
-  allowComments: Boolean!
-}
-
-input CommentInput {
-  postID: ID!
-  parentCommentID: ID
-  authorID: String!
-  text: String!
 }
