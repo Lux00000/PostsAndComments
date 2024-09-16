@@ -1,38 +1,25 @@
 version: '3.9'
 
 services:
+  post-and-comments:
+    build: ./
+    command: ./post-and-comments
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    environment:
+      - DB_PASSWORD=password
+
   db:
+    restart: always
     image: postgres:latest
+    volumes:
+      - ./db/postgres/data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: postsandcomments
+      DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      PORT: 8080
-      STORAGE_TYPE:
-      DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
-    depends_on:
-      - db
-    command: ["./main"]
-
-  migrate:
-    image: migrate/migrate
-    depends_on:
-      - db
-    volumes:
-      - ./internal/storage/postgres/migrations:/migrations
-    environment:
-      DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
-    command: ["-path=/migrations", "-database", "$$DATABASE_URL", "up"]
-
-volumes:
-  postgres_data:
