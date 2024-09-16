@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/Lux00000/post-and-comments/internal/models"
 )
 
@@ -14,11 +15,15 @@ func NewDBPostPostgres(db *sql.DB) *dbPostPostgres {
 }
 
 func (s *dbPostPostgres) CreatePost(post models.Post) (models.Post, error) {
-	query := `INSERT INTO Posts (title, content, author_id, allow_comments) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO posts (title, content, author_id, allow_comments) 
+			  VALUES ($1, $2, $3, $4) RETURNING id`
+
 	err := s.db.QueryRow(query, post.Title, post.Content, post.AuthorId, post.AllowComments).Scan(&post.ID)
 	if err != nil {
-		return post, err
+
+		return post, fmt.Errorf("failed to create post: %v", err)
 	}
+
 	return post, nil
 }
 

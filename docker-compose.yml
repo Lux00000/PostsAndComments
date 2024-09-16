@@ -20,6 +20,21 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: postsandcomments
-      DATABASE_URL: "postgres://user:password@db:5432/postsandcomments?sslmode=disable"
     ports:
       - "5432:5432"
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - db
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/postsandcomments?sslmode=disable
+    entrypoint: [
+      "sh", "-c",
+      "until nc -z db 5432; do echo waiting for postgres; sleep 2; done; migrate -path=/migrations -database $${DATABASE_URL} up"
+    ]
+
+volumes:
+  postgres_data:

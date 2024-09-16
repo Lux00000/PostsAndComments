@@ -10,12 +10,10 @@ import (
 	"github.com/Lux00000/post-and-comments/internal/storage"
 	"github.com/Lux00000/post-and-comments/internal/storage/inmemory"
 	"github.com/Lux00000/post-and-comments/internal/storage/postgres"
-	"net/http"
-
-	"log"
-	"os"
-
 	_ "github.com/lib/pq"
+	"log"
+	"net/http"
+	"os"
 )
 
 const defaultPort = "8080"
@@ -45,6 +43,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to connect to database: %v", err)
 		}
+
 		defer db.Close()
 		postsStorage = postgres.NewDBPostPostgres(db)
 		commentStorage = postgres.NewDBCommentPostgres(db)
