@@ -10,6 +10,7 @@ services:
       - db
     environment:
       - DB_PASSWORD=password
+      - DATABASE_URL=postgres://user:password@db:5432/postsandcomments?sslmode=disable
 
   db:
     restart: always

@@ -6,6 +6,8 @@ package resolver
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -67,16 +69,25 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID string, par
 		PostID:          strconv.Itoa(newComment.PostID),
 		ParentCommentID: newComment.ParentCommentID,
 	}
-	//r.CommentsObservers.NotifyObservers(intPostID, newComment)
+	// ПОД ВОПРОСОМ
+	errNotify := r.CommentsObservers.NotifyObservers(intPostID, newComment)
+	if errNotify != nil {
+		return nil, fmt.Errorf("failed to notify observers: %w", err)
+	}
 	return &mappedComment, nil
 }
 
 // GetAllPosts is the resolver for the GetAllPosts field.
 func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *int) ([]*model.Post, error) {
+	if page == nil || pageSize == nil {
+		return nil, errors.New("page and pageSize must be provided")
+	}
+
 	posts, err := r.PostsService.GetAllPosts(page, pageSize)
 	if err != nil {
 		return nil, err
 	}
+
 	res := make([]*model.Post, 0, len(posts))
 	for _, post := range posts {
 		res = append(res, &model.Post{
@@ -87,6 +98,7 @@ func (r *queryResolver) GetAllPosts(ctx context.Context, page *int, pageSize *in
 			AllowComments: post.AllowComments,
 		})
 	}
+
 	return res, nil
 }
 
@@ -124,19 +136,18 @@ func (r *queryResolver) GetPostByID(ctx context.Context, id int) (*model.Post, e
 	return &mappedPost, nil
 }
 
-// CommentsSubscription is the resolver for the CommentsSubscription field.
+// ПОД ВОПРОСОМ
 func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID string) (<-chan *model.Comment, error) {
 	intPostID, err := strconv.Atoi(postID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid postID: %w", err)
 	}
 
 	id, ch, err := r.CommentsObservers.CreateObserver(intPostID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create observer: %w", err)
 	}
 
-	// Создаем новый канал типа <-chan *model.Comment
 	receiveOnlyCh := make(chan *model.Comment)
 
 	go func() {
@@ -144,6 +155,7 @@ func (r *subscriptionResolver) CommentsSubscription(ctx context.Context, postID 
 		for {
 			select {
 			case <-ctx.Done():
+
 				err := r.CommentsObservers.DeleteObserver(intPostID, id)
 				if err != nil {
 					log.Println("Error deleting observer:", err)

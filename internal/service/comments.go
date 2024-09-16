@@ -18,7 +18,7 @@ func NewCommentsService(com storage.Comments, posts storage.Posts) *CommentsServ
 
 func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment, error) {
 	if comment.AuthorId == 0 {
-		return models.Comment{}, errors.New("AuthorId is zero")
+		return models.Comment{}, fmt.Errorf("AuthorId is zero")
 	}
 
 	if len(comment.Text) >= 2000 {
@@ -42,7 +42,7 @@ func (c *CommentsService) CreateComment(comment models.Comment) (models.Comment,
 
 	newComment, err := c.comments.CreateComment(comment)
 	if err != nil {
-		return models.Comment{}, errors.New("CommentService error CreateComment")
+		return models.Comment{}, fmt.Errorf("CommentService error CreateComment: %w", err)
 	}
 
 	return newComment, nil
@@ -52,7 +52,7 @@ func (c CommentsService) GetCommentsByPost(postId int, page *int, pageSize *int)
 
 	comments, err := c.comments.GetCommentsByPost(postId, page, pageSize)
 	if err != nil {
-		return nil, errors.New("CommentService error GetCommentsByPost")
+		return nil, fmt.Errorf("CommentService error GetChildrenOfComment: %w", err)
 	}
 
 	return comments, nil

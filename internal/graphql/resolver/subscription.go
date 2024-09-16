@@ -27,7 +27,6 @@ func NewCommentsObserver() *CommentsObservers {
 }
 
 func (c *CommentsObservers) CreateObserver(postId int) (int, chan *models.Comment, error) {
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -37,7 +36,6 @@ func (c *CommentsObservers) CreateObserver(postId int) (int, chan *models.Commen
 	c.chans[postId] = append(c.chans[postId], CommentObserver{ch: ch, id: c.counter})
 
 	return c.counter, ch, nil
-
 }
 
 func (c *CommentsObservers) DeleteObserver(postId, chanId int) error {

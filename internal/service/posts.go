@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Lux00000/post-and-comments/internal/models"
 	"github.com/Lux00000/post-and-comments/internal/storage"
 )
@@ -22,7 +23,7 @@ func (p PostsService) CreatePost(post models.Post) (models.Post, error) {
 
 	newPost, err := p.pst.CreatePost(post)
 	if err != nil {
-		return models.Post{}, err
+		return models.Post{}, fmt.Errorf("error creating post: %w", err)
 	}
 
 	return newPost, nil
@@ -37,7 +38,7 @@ func (p PostsService) GetPostById(postId int) (models.Post, error) {
 
 	post, err := p.pst.GetPostById(postId)
 	if err != nil {
-		return models.Post{}, err
+		return models.Post{}, fmt.Errorf("error getting post by id: %v", err)
 	}
 
 	return *post, nil
@@ -45,20 +46,9 @@ func (p PostsService) GetPostById(postId int) (models.Post, error) {
 
 func (p PostsService) GetAllPosts(page, pageSize *int) ([]models.Post, error) {
 
-	if page != nil && *page < 0 {
-		return nil, errors.New("page is negative")
-
-	}
-
-	if pageSize != nil && *pageSize < 0 {
-		return nil, errors.New("pageSize is negative")
-	}
-	offset := (*page - 1) * *pageSize
-	limit := *pageSize
-
-	posts, err := p.pst.GetAllPosts(limit, offset)
+	posts, err := p.pst.GetAllPosts(*page, *pageSize)
 	if err != nil {
-		return nil, errors.New("GetAllPostsService error")
+		return nil, fmt.Errorf("error getting all posts: %v", err)
 	}
 
 	return posts, nil

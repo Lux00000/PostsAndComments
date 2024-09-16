@@ -16,11 +16,11 @@ import (
 	"os"
 )
 
-const defaultPort = "8080"
+const defaultPort = "8000"
 
 func main() {
 	os.Setenv("STORAGE_TYPE", "DATABASE_URL")
-	os.Setenv("DATABASE_URL", "postgres://user:password@db:5432/postsandcomments?sslmode=disable")
+	os.Setenv("DATABASE_URL", "postgres://user:password@localhost:5432/postsandcomments?sslmode=disable")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort

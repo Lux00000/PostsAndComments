@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/Lux00000/post-and-comments/internal/models"
 )
 
@@ -23,24 +25,24 @@ func (s *dbCommentPostgres) CreateComment(comment models.Comment) (models.Commen
 }
 
 func (s *dbCommentPostgres) GetCommentsByPost(postId int, page *int, pageSize *int) ([]*models.Comment, error) {
-	offset := 0
-	limit := -1
-	if page != nil && pageSize != nil {
-		offset = (*page - 1) * *pageSize
-		limit = *pageSize
+	if page == nil || pageSize == nil {
+		return nil, errors.New("page and pageSize must be provided")
 	}
 
-	query := `SELECT * FROM comments WHERE post_id = $1 ORDER BY id OFFSET $2`
-	args := []interface{}{postId, offset}
+	offset := (*page - 1) * *pageSize
+	limit := *pageSize
 
-	if limit >= 0 {
-		query += " LIMIT $3"
-		args = append(args, limit)
-	}
+	query := `
+        SELECT id, post_id, parent_comment_id, author_id, text
+        FROM comments
+        WHERE post_id = $1
+        ORDER BY id
+        LIMIT $2 OFFSET $3
+    `
 
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(query, postId, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query comments: %v", err)
 	}
 	defer rows.Close()
 
@@ -48,10 +50,15 @@ func (s *dbCommentPostgres) GetCommentsByPost(postId int, page *int, pageSize *i
 	for rows.Next() {
 		var comment models.Comment
 		if err := rows.Scan(&comment.ID, &comment.PostID, &comment.ParentCommentID, &comment.AuthorId, &comment.Text); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan comment row: %v", err)
 		}
 		comments = append(comments, &comment)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during iteration: %v", err)
+	}
+
 	return comments, nil
 }
 
