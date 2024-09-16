@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  post-and-comments:
+    build: ./
+    command: ./post-and-comments
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    environment:
+      - DB_PASSWORD=password
+      - DATABASE_URL=postgres://user:password@db:5432/postsandcomments?sslmode=disable
+
+  db:
+    restart: always
+    image: postgres:latest
+    volumes:
+      - ./db/postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postsandcomments
+    ports:
+      - "5432:5432"
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - db
+    volumes:
+      - ./migrations:/migrations
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/postsandcomments?sslmode=disable
+    entrypoint: [
+      "sh", "-c",
+      "until nc -z db 5432; do echo waiting for postgres; sleep 2; done; migrate -path=/migrations -database $${DATABASE_URL} up"
+    ]
+
+volumes:
+  postgres_data:
